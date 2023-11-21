@@ -7,7 +7,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 const isProduction = process.env.NODE_ENV == 'production';
 const config = {
   entry: {
-    routory: path.join(__dirname, '..', 'src', 'routory.ts'),
+    notifier: path.join(__dirname, '..', 'src', 'index.ts'),
   },
   output: {
     library: {
