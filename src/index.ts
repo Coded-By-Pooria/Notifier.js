@@ -19,10 +19,8 @@ export default class Notifier<T extends string = string>
   private listeners: Map<number, [number, Listener][]> = new Map();
 
   // 32bit id -> first 16bit is listener id and last 16bit is event id
-  private consumeListenerId(eventId: number) {
-    const ei = eventId << 16;
-    let id = ei | this.listenerIds++;
-    return id;
+  private consumeListenerId() {
+    return this.listenerIds++;
   }
 
   private consumeEventId() {
@@ -32,19 +30,22 @@ export default class Notifier<T extends string = string>
   addListener(eventName: T, listener: Listener): number {
     eventName = eventName.trim() as T;
     const entery = this.findEventEntry(eventName);
-    let listenerId: number;
+    let listenerId: number, eventId: number;
 
     if (entery) {
-      listenerId = this.consumeListenerId(entery[0]);
-      const _listener = this.listeners.get(entery[0])!;
+      eventId = entery[0];
+      listenerId = this.consumeListenerId();
+      const _listener = this.listeners.get(eventId)!;
       _listener.push([listenerId, listener]);
     } else {
-      const eventId = this.consumeEventId();
-      listenerId = this.consumeListenerId(eventId);
+      eventId = this.consumeEventId();
+      listenerId = this.consumeListenerId();
 
       this.events.set(eventId, eventName);
       this.listeners.set(eventId, [[listenerId, listener]]);
     }
+    const ei = eventId << 16;
+    listenerId = ei | listenerId;
     return listenerId;
   }
   isListening(): boolean {
@@ -62,7 +63,7 @@ export default class Notifier<T extends string = string>
     listeners.splice(index, 1);
 
     if (listeners.length === 0) {
-      this.listeners.delete(listenerId);
+      this.listeners.delete(eventId);
       this.events.delete(eventId);
     }
 
