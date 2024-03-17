@@ -1,98 +1,99 @@
-export type Listener = (event: { eventName: string; data: any }) => void;
+import { ListenCallback, Listener, ListenersHandler } from './listener';
 
 export interface BaseNofier<T extends string = string> {
-  addListener: (eventName: T, data: Listener) => number;
-  removeListener: (id: number) => boolean;
+  addListener: (eventName: T, data: ListenCallback) => Listener<T>;
 }
 
 export interface NotifierMembers<T extends string = string>
   extends BaseNofier<T> {
   clearify: (eventName: T) => void;
-  trigger: (event: T) => void;
+  trigger: (event: T, data?: any) => void;
 }
+
 export default class Notifier<T extends string = string>
   implements NotifierMembers<T>
 {
-  private listenerIds: number = 0;
-  private eventIds: number = 0;
-  private events: Map<number, string> = new Map();
-  private listeners: Map<number, [number, Listener][]> = new Map();
+  private listeners: Map<string, ListenersHandler> = new Map();
 
-  // 32bit id -> first 16bit is listener id and last 16bit is event id
-  private consumeListenerId() {
-    return this.listenerIds++;
-  }
+  /**
+   *
+   * @param async If notifier define as async, then the new events notification
+   * are sent as asynchron. this can help to keep event ordering in right way.
+   */
+  constructor(private async: boolean) {}
 
-  private consumeEventId() {
-    return this.eventIds++;
-  }
-
-  addListener(eventName: T, listener: Listener): number {
+  addListener(eventName: T, listenerCb: ListenCallback): Listener<T> {
     eventName = eventName.trim() as T;
-    const entery = this.findEventEntry(eventName);
-    let listenerId: number, eventId: number;
+    const entery = this.listeners.get(eventName);
+    const listener = new Listener(listenerCb);
+    let handler: ListenersHandler;
 
     if (entery) {
-      eventId = entery[0];
-      listenerId = this.consumeListenerId();
-      const _listener = this.listeners.get(eventId)!;
-      _listener.push([listenerId, listener]);
+      handler = this.listeners.get(eventName)!;
     } else {
-      eventId = this.consumeEventId();
-      listenerId = this.consumeListenerId();
-
-      this.events.set(eventId, eventName);
-      this.listeners.set(eventId, [[listenerId, listener]]);
+      handler = new ListenersHandler();
+      this.listeners.set(eventName, handler);
     }
-    const ei = eventId << 16;
-    listenerId = ei | listenerId;
-    return listenerId;
+    handler.append(listener);
+
+    return listener;
   }
-  isListening(): boolean {
-    return this.listeners.size > 0;
-  }
-  removeListener = (id: number) => {
-    const eventId = id >> 16;
-    const listenerId = (id << 16) >> 16;
-    const listeners = this.listeners.get(eventId);
-    if (!listeners) {
-      return false;
-    }
-
-    const index = listeners.findIndex((l) => l[0] === listenerId);
-    listeners.splice(index, 1);
-
-    if (listeners.length === 0) {
-      this.listeners.delete(eventId);
-      this.events.delete(eventId);
-    }
-
-    return true;
-  };
-
-  protected findEventEntry(eventName: string) {
-    return Array.from(this.events.entries()).find((e) => e[1] === eventName);
+  isListening(eventName: T): boolean {
+    return !!this.listeners.get(eventName)?.hasListeners();
   }
 
   clearify(eventName: string) {
     eventName = eventName.trim();
-    const entry = this.findEventEntry(eventName);
+    const entry = this.listeners.get(eventName);
     if (!entry) {
       return false;
     }
-    this.events.delete(entry[0]);
-    this.listeners.delete(entry[0]);
-    return true;
+    return entry.clearList();
   }
   trigger(eventName: T, data?: any): void {
     eventName = eventName.trim() as T;
-    const x = this.findEventEntry(eventName);
+    const x = this.listeners.get(eventName);
     if (!x) {
       return;
     }
-    const listeners = this.listeners.get(x[0])!;
-    listeners.forEach((listener) => {
-      listener[1]({ eventName: eventName as string, data });
-    });
+
+    this.notifyListeners(x, eventName, data);
+  }
+
+  private notifyListeners(handler: ListenersHandler, event: T, data: any) {
+    if (!handler.hasListeners()) {
+      return;
+    }
+
+    const invoker = this.async
+      ? new _AsyncListenersInvokeHandler(handler, event, data)
+      : new _SyncListenersInvokeHandler(handler, event, data);
+    invoker.invoke();
+  }
+}
+
+abstract class _InvokeHandler<T extends string> {
+  constructor(
+    protected handler: ListenersHandler,
+    protected eventName: T,
+    protected data?: any
+  ) {}
+
+  abstract invoke(next?: Listener<T>): void;
+}
+
+class _AsyncListenersInvokeHandler<T extends string> extends _InvokeHandler<T> {
+  invoke(next?: Listener<T> | undefined): void {
+    const listener = next ?? (this.handler._first! as Listener<T>);
+    listener.scheduleEvent(this.eventName, this.data);
+    if (listener._next) this.invoke(listener._next as Listener<T>);
+  }
+}
+
+class _SyncListenersInvokeHandler<T extends string> extends _InvokeHandler<T> {
+  invoke(next?: Listener<T>) {
+    const listener = next ?? (this.handler._first! as Listener<T>);
+    listener.invoke(this.eventName, this.data);
+    if (listener._next) this.invoke(listener._next as Listener<T>);
   }
 }
