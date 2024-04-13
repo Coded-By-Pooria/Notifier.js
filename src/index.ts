@@ -20,7 +20,7 @@ export default class Notifier<T extends string = string>
    * @param async If notifier define as async, then the new events notification
    * are sent as asynchron. this can help to keep event ordering in right way.
    */
-  constructor(private async: boolean) {}
+  constructor(private async: boolean = true) {}
 
   addListener(eventName: T, listenerCb: ListenCallback): Listener<T> {
     eventName = eventName.trim() as T;

@@ -1,5 +1,3 @@
-import { assert } from 'console';
-
 export class LinkedListHandler<T extends LinkableItem = LinkableItem> {
   _first?: T;
   _last?: T;
@@ -41,8 +39,11 @@ export class LinkedListHandler<T extends LinkableItem = LinkableItem> {
   }
 
   protected unLink(item: LinkableItem) {
-    assert(!!item, 'Item is not valid');
-    assert(item._handler === this, 'Item not belong to this list handler');
+    console.assert(!!item, 'Item is not valid');
+    console.assert(
+      item._handler === this,
+      'Item not belong to this list handler'
+    );
 
     if (item._previous) {
       item._previous._next = item._next;
