@@ -6,12 +6,13 @@ export class LinkedListHandler<T extends LinkableItem = LinkableItem> {
     if (this._last) {
       const last = this._last;
       last._next = item;
-
-      this._last = item;
     } else {
       // no listeners
-      this._first = this._last = item;
+      this._first = item;
     }
+    item._previous = this._last;
+    item._next = undefined;
+    this._last = item;
     item._handler = this;
   }
 
