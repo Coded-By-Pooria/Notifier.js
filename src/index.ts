@@ -42,8 +42,7 @@ export default class Notifier<T extends string = string>
     return !!this.listeners.get(eventName)?.hasListeners();
   }
 
-  clearify(eventName: string) {
-    eventName = eventName.trim();
+  clearify(eventName: T) {
     const entry = this.listeners.get(eventName);
     if (!entry) {
       return false;
