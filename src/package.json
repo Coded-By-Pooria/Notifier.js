@@ -1,24 +1,9 @@
 {
-  "name": "notifier",
-  "version": "1.0.0",
+  "name": "@pourianof/notifier",
+  "version": "1.0.1",
   "description": "A simple notifier library to help develop event base services in well performance way. INSPIRED BY FLUTTER STREAM",
-  "main": "build/notifier.js",
-  "types": "build/@types/index.d.ts",
+  "main": "./notifier.js",
+  "types": "./notifier.d.ts",
   "author": "Pooria <pouriyaxamini@gmail.com>",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^20.8.9",
-    "@types/webpack": "^5.28.4",
-    "@webpack-cli/generators": "^3.0.7",
-    "clean-webpack-plugin": "^4.0.0",
-    "copy-webpack-plugin": "^11.0.0",
-    "prettier": "^3.0.3",
-    "terser-webpack-plugin": "^5.3.9",
-    "ts-loader": "^9.5.0",
-    "types-webpack-bundler": "^1.0.2",
-    "typescript": "^5.2.2",
-    "webpack": "^5.89.0",
-    "webpack-cli": "^5.1.4",
-    "wepack-cli": "^0.0.1-security"
-  }
+  "license": "MIT"
 }
