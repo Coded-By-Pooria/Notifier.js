@@ -8,6 +8,10 @@ A simple library to utilize event-base programming in our app.
 npm i @pourianof/nitifier
 ```
 
+# Changes
+
+`V1.1` Make event typing richer (may cause typescript code break if you extending classes)
+
 # Usage
 
 You can use a notifier like:
@@ -64,6 +68,25 @@ For example our notifier only works with "meow" and "bark" events:
 
   notifier.trigger('hi'); // Typescript error which refer to wrong event with what you defined when you construct
 ```
+
+You can also define a type as map of key-values which keys are the event names and values are type of the data which that event carrying.
+
+```
+  const notifier = new Notifier<
+    {
+      "meow" : {
+        catName: string;
+        age: number
+      },
+      "bark" : {
+        dogName: string;
+        owner: string;
+      }
+    }
+  >();
+```
+
+In this example typescript force you to work with only two defined events("bark", "meow") and also whenever you trigger those events you must pass a data with the specified structure.
 
 ## Sync-Async
 

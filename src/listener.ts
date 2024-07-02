@@ -1,9 +1,12 @@
 import { LinkableItem, LinkedListHandler } from './list';
 import { PendingEvent, PendingEventsHandler } from './pendingEvents';
 
-export type ListenCallback = (event: { eventName: string; data: any }) => void;
+export type ListenCallback<
+  T extends string = string,
+  P extends {} = {},
+> = (event: { eventName: T; data: P }) => void;
 
-export class Listener<T extends string> extends LinkableItem {
+export class Listener extends LinkableItem {
   isInvoking = false;
 
   private pendings?: PendingEventsHandler;
@@ -12,11 +15,11 @@ export class Listener<T extends string> extends LinkableItem {
     return !!this.pendings && this.pendings.hasItem();
   }
 
-  constructor(private listen: ListenCallback) {
+  constructor(private listen: ListenCallback<any, any>) {
     super();
   }
 
-  invoke(eventName: T, data?: any) {
+  invoke(eventName: string, data?: any) {
     if (this.isInvoking) {
       this.scheduleEvent(eventName, data);
     } else {
@@ -24,13 +27,13 @@ export class Listener<T extends string> extends LinkableItem {
     }
   }
 
-  _invoke(eventName: T, data?: any) {
+  _invoke(eventName: string, data?: any) {
     this.isInvoking = true;
     this.listen({ data, eventName });
     this.isInvoking = false;
   }
 
-  scheduleEvent(eventName: T, data?: any) {
+  scheduleEvent(eventName: string, data?: any) {
     this.pendings ??= new PendingEventsHandler();
 
     const event = new PendingEvent(this, eventName, data);
@@ -49,16 +52,16 @@ export class Listener<T extends string> extends LinkableItem {
   }
 }
 
-export class ListenersHandler extends LinkedListHandler<Listener<any>> {
+export class ListenersHandler extends LinkedListHandler<Listener> {
   hasListeners() {
     return !!this._first;
   }
 
-  append(item: Listener<any>): void {
+  append(item: Listener): void {
     super.append(item);
   }
 
-  cancelListening(listener: Listener<any>) {
+  cancelListening(listener: Listener) {
     super.unLink(listener);
   }
 }

@@ -1,16 +1,21 @@
+import BaseNofier from './baseNotifier';
 import { ListenCallback, Listener, ListenersHandler } from './listener';
+import {
+  EventDataFromMap,
+  EventGeneric,
+  EventNameFromMap,
+} from './typesHelper';
 
-export interface BaseNofier<T extends string = string> {
-  addListener: (eventName: T, data: ListenCallback) => Listener<T>;
-}
-
-export interface NotifierMembers<T extends string = string>
+export interface NotifierMembers<T extends EventGeneric = string>
   extends BaseNofier<T> {
-  clearify: (eventName: T) => void;
-  trigger: (event: T, data?: any) => void;
+  clearify: <_E extends EventNameFromMap<T> & string>(eventName: _E) => void;
+  trigger: <_E extends EventNameFromMap<T> & string>(
+    eventName: _E,
+    data?: any
+  ) => void;
 }
 
-export default class Notifier<T extends string = string>
+export default class Notifier<T extends EventGeneric = string>
   implements NotifierMembers<T>
 {
   private listeners: Map<string, ListenersHandler> = new Map();
@@ -22,10 +27,12 @@ export default class Notifier<T extends string = string>
    */
   constructor(private async: boolean = true) {}
 
-  addListener(eventName: T, listenerCb: ListenCallback): Listener<T> {
-    eventName = eventName.trim() as T;
+  addListener<_E extends EventNameFromMap<T> & string>(
+    eventName: _E,
+    data: ListenCallback<_E, EventDataFromMap<T, _E>>
+  ) {
     const entery = this.listeners.get(eventName);
-    const listener = new Listener(listenerCb);
+    const listener = new Listener(data);
     let handler: ListenersHandler;
 
     if (entery) {
@@ -38,19 +45,22 @@ export default class Notifier<T extends string = string>
 
     return listener;
   }
-  isListening(eventName: T): boolean {
+
+  isListening<_E extends EventNameFromMap<T> & string>(eventName: _E): boolean {
     return !!this.listeners.get(eventName)?.hasListeners();
   }
 
-  clearify(eventName: T) {
+  clearify<_E extends EventNameFromMap<T> & string>(eventName: _E) {
     const entry = this.listeners.get(eventName);
     if (!entry) {
       return false;
     }
     return entry.clearList();
   }
-  trigger(eventName: T, data?: any): void {
-    eventName = eventName.trim() as T;
+  trigger<_E extends EventNameFromMap<T> & string>(
+    eventName: _E,
+    data?: EventDataFromMap<T, _E>
+  ): void {
     const x = this.listeners.get(eventName);
     if (!x) {
       return;
@@ -59,7 +69,11 @@ export default class Notifier<T extends string = string>
     this.notifyListeners(x, eventName, data);
   }
 
-  private notifyListeners(handler: ListenersHandler, event: T, data: any) {
+  private notifyListeners<_E extends EventNameFromMap<T> & string>(
+    handler: ListenersHandler,
+    event: _E,
+    data: any
+  ) {
     if (!handler.hasListeners()) {
       return;
     }
@@ -78,21 +92,21 @@ abstract class _InvokeHandler<T extends string> {
     protected data?: any
   ) {}
 
-  abstract invoke(next?: Listener<T>): void;
+  abstract invoke(next?: Listener): void;
 }
 
 class _AsyncListenersInvokeHandler<T extends string> extends _InvokeHandler<T> {
-  invoke(next?: Listener<T> | undefined): void {
-    const listener = next ?? (this.handler._first! as Listener<T>);
+  invoke(next?: Listener | undefined): void {
+    const listener = next ?? (this.handler._first! as Listener);
     listener.scheduleEvent(this.eventName, this.data);
-    if (listener._next) this.invoke(listener._next as Listener<T>);
+    if (listener._next) this.invoke(listener._next as Listener);
   }
 }
 
 class _SyncListenersInvokeHandler<T extends string> extends _InvokeHandler<T> {
-  invoke(next?: Listener<T>) {
-    const listener = next ?? (this.handler._first! as Listener<T>);
+  invoke(next?: Listener) {
+    const listener = next ?? (this.handler._first! as Listener);
     listener.invoke(this.eventName, this.data);
-    if (listener._next) this.invoke(listener._next as Listener<T>);
+    if (listener._next) this.invoke(listener._next as Listener);
   }
 }
