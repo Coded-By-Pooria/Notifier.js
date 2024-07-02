@@ -2,6 +2,12 @@
 
 A simple library to utilize event-base programming in our app.
 
+# Installation
+
+```
+npm i @pourianof/nitifier
+```
+
 # Usage
 
 You can use a notifier like:
