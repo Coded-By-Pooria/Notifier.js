@@ -1,9 +1,9 @@
 import { LinkableItem, LinkedListHandler } from './list';
-import { Listener } from './listener';
+import { ListenerIml } from './listener';
 
 export class PendingEvent extends LinkableItem {
   constructor(
-    private listener: Listener<any>,
+    private listener: ListenerIml,
     private eventName: string,
     private data?: any
   ) {

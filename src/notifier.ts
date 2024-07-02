@@ -1,7 +1,7 @@
 import BaseNofier from './baseNotifier';
-import { ListenCallback, Listener, ListenersHandler } from './listener';
+import { ListenCallback, ListenerIml, ListenersHandler } from './listener';
 import {
-  EventDataFromMap,
+  EventDataTypeFromMap,
   EventGeneric,
   EventNameFromMap,
 } from './typesHelper';
@@ -27,12 +27,12 @@ export default class Notifier<T extends EventGeneric = string>
    */
   constructor(private async: boolean = true) {}
 
-  addListener<_E extends EventNameFromMap<T> & string>(
-    eventName: _E,
-    data: ListenCallback<_E, EventDataFromMap<T, _E>>
+  addListener<E extends EventNameFromMap<T> & string>(
+    eventName: E,
+    data: ListenCallback<E, EventDataTypeFromMap<T, E>>
   ) {
     const entery = this.listeners.get(eventName);
-    const listener = new Listener(data);
+    const listener = new ListenerIml(data);
     let handler: ListenersHandler;
 
     if (entery) {
@@ -59,7 +59,7 @@ export default class Notifier<T extends EventGeneric = string>
   }
   trigger<_E extends EventNameFromMap<T> & string>(
     eventName: _E,
-    data?: EventDataFromMap<T, _E>
+    data?: EventDataTypeFromMap<T, _E>
   ): void {
     const x = this.listeners.get(eventName);
     if (!x) {
@@ -92,21 +92,21 @@ abstract class _InvokeHandler<T extends string> {
     protected data?: any
   ) {}
 
-  abstract invoke(next?: Listener): void;
+  abstract invoke(next?: ListenerIml): void;
 }
 
 class _AsyncListenersInvokeHandler<T extends string> extends _InvokeHandler<T> {
-  invoke(next?: Listener | undefined): void {
-    const listener = next ?? (this.handler._first! as Listener);
+  invoke(next?: ListenerIml | undefined): void {
+    const listener = next ?? (this.handler._first! as ListenerIml);
     listener.scheduleEvent(this.eventName, this.data);
-    if (listener._next) this.invoke(listener._next as Listener);
+    if (listener._next) this.invoke(listener._next as ListenerIml);
   }
 }
 
 class _SyncListenersInvokeHandler<T extends string> extends _InvokeHandler<T> {
-  invoke(next?: Listener) {
-    const listener = next ?? (this.handler._first! as Listener);
+  invoke(next?: ListenerIml) {
+    const listener = next ?? (this.handler._first! as ListenerIml);
     listener.invoke(this.eventName, this.data);
-    if (listener._next) this.invoke(listener._next as Listener);
+    if (listener._next) this.invoke(listener._next as ListenerIml);
   }
 }

@@ -5,6 +5,9 @@ const notifier = new Notifier<{
     name: string;
     sound: 'bark' | 'meow';
   };
+  alert: {
+    action: 'burn';
+  };
 }>(true);
 
 let counter = 1;

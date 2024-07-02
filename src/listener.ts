@@ -6,7 +6,11 @@ export type ListenCallback<
   P extends {} = {},
 > = (event: { eventName: T; data: P }) => void;
 
-export class Listener extends LinkableItem {
+export interface Listener {
+  cancel(): void;
+}
+
+export class ListenerIml extends LinkableItem implements Listener {
   isInvoking = false;
 
   private pendings?: PendingEventsHandler;
@@ -52,16 +56,16 @@ export class Listener extends LinkableItem {
   }
 }
 
-export class ListenersHandler extends LinkedListHandler<Listener> {
+export class ListenersHandler extends LinkedListHandler<ListenerIml> {
   hasListeners() {
     return !!this._first;
   }
 
-  append(item: Listener): void {
+  append(item: ListenerIml): void {
     super.append(item);
   }
 
-  cancelListening(listener: Listener) {
+  cancelListening(listener: ListenerIml) {
     super.unLink(listener);
   }
 }
