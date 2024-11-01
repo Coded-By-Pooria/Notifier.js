@@ -1,6 +1,6 @@
 {
   "name": "@pourianof/notifier",
-  "version": "1.1.12",
+  "version": "1.2.0",
   "description": "A simple notifier library to help develop event base services in well performance way. INSPIRED BY FLUTTER STREAM",
   "main": "./notifier.js",
   "types": "./notifier.d.ts",

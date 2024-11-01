@@ -1,17 +1,17 @@
-import { LinkableItem, LinkedListHandler } from './list';
-import { ListenerIml } from './listener';
+import { ListenCallbackEvent } from "./event";
+import { LinkableItem, LinkedListHandler } from "./list";
+import { ListenerImpl } from "./listener";
 
 export class PendingEvent extends LinkableItem {
   constructor(
-    private listener: ListenerIml,
-    private eventName: string,
-    private data?: any
+    private listener: ListenerImpl,
+    private event: ListenCallbackEvent
   ) {
     super();
   }
 
   dispatch() {
-    this.listener._invoke(this.eventName, this.data);
+    this.listener._invoke(this.event);
   }
 }
 

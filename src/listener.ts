@@ -1,16 +1,16 @@
-import { LinkableItem, LinkedListHandler } from './list';
-import { PendingEvent, PendingEventsHandler } from './pendingEvents';
+import { ListenCallbackEvent } from "./event";
+import { LinkableItem, LinkedListHandler } from "./list";
+import { PendingEvent, PendingEventsHandler } from "./pendingEvents";
 
-export type ListenCallback<
-  T extends string = string,
-  P extends {} = {},
-> = (event: { eventName: T; data: P }) => void;
+export type ListenCallback<T extends string = string, P extends {} = {}> = (
+  event: ListenCallbackEvent
+) => void;
 
 export interface Listener {
   cancel(): void;
 }
 
-export class ListenerIml extends LinkableItem implements Listener {
+export class ListenerImpl extends LinkableItem implements Listener {
   isInvoking = false;
 
   private pendings?: PendingEventsHandler;
@@ -23,25 +23,25 @@ export class ListenerIml extends LinkableItem implements Listener {
     super();
   }
 
-  invoke(eventName: string, data?: any) {
+  invoke(event: ListenCallbackEvent) {
     if (this.isInvoking) {
-      this.scheduleEvent(eventName, data);
+      this.scheduleEvent(event);
     } else {
-      this._invoke(eventName, data);
+      this._invoke(event);
     }
   }
 
-  _invoke(eventName: string, data?: any) {
+  _invoke(event: ListenCallbackEvent) {
     this.isInvoking = true;
-    this.listen({ data, eventName });
+    this.listen(event);
     this.isInvoking = false;
   }
 
-  scheduleEvent(eventName: string, data?: any) {
+  scheduleEvent(event: ListenCallbackEvent) {
     this.pendings ??= new PendingEventsHandler();
 
-    const event = new PendingEvent(this, eventName, data);
-    this.pendings.append(event);
+    const eventHandler = new PendingEvent(this, event);
+    this.pendings.append(eventHandler);
 
     this.pendings.start();
   }
@@ -56,16 +56,16 @@ export class ListenerIml extends LinkableItem implements Listener {
   }
 }
 
-export class ListenersHandler extends LinkedListHandler<ListenerIml> {
+export class ListenersHandler extends LinkedListHandler<ListenerImpl> {
   hasListeners() {
     return !!this._first;
   }
 
-  append(item: ListenerIml): void {
+  append(item: ListenerImpl): void {
     super.append(item);
   }
 
-  cancelListening(listener: ListenerIml) {
+  cancelListening(listener: ListenerImpl) {
     super.unLink(listener);
   }
 }

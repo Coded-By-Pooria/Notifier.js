@@ -1,10 +1,16 @@
-import BaseNofier from './baseNotifier';
-import { ListenCallback, ListenerIml, ListenersHandler } from './listener';
+import BaseNofier from "./baseNotifier";
+import { ListenCallbackEvent } from "./event";
+import {
+  ListenCallback,
+  Listener,
+  ListenerImpl,
+  ListenersHandler,
+} from "./listener";
 import {
   EventDataTypeFromMap,
   EventGeneric,
   EventNameFromMap,
-} from './typesHelper';
+} from "./typesHelper";
 
 export interface NotifierMembers<T extends EventGeneric = string>
   extends BaseNofier<T> {
@@ -30,12 +36,12 @@ export default class Notifier<T extends EventGeneric = string>
   addListener<E extends EventNameFromMap<T> & string>(
     eventName: E,
     data: ListenCallback<E, EventDataTypeFromMap<T, E>>
-  ) {
-    const entery = this.listeners.get(eventName);
-    const listener = new ListenerIml(data);
+  ): Listener {
+    const entries = this.listeners.get(eventName);
+    const listener = new ListenerImpl(data);
     let handler: ListenersHandler;
 
-    if (entery) {
+    if (entries) {
       handler = this.listeners.get(eventName)!;
     } else {
       handler = new ListenersHandler();
@@ -69,7 +75,7 @@ export default class Notifier<T extends EventGeneric = string>
     this.notifyListeners(x, eventName, data);
   }
 
-  private notifyListeners<_E extends EventNameFromMap<T> & string>(
+  protected notifyListeners<_E extends EventNameFromMap<T> & string>(
     handler: ListenersHandler,
     event: _E,
     data: any
@@ -86,27 +92,50 @@ export default class Notifier<T extends EventGeneric = string>
 }
 
 abstract class _InvokeHandler<T extends string> {
+  event: ListenCallbackEvent;
+  protected stopped = false;
   constructor(
     protected handler: ListenersHandler,
     protected eventName: T,
     protected data?: any
-  ) {}
+  ) {
+    this.event = new ListenCallbackEvent(
+      eventName,
+      data,
+      this.stopPropagation.bind(this)
+    );
+  }
 
-  abstract invoke(next?: ListenerIml): void;
+  protected stopPropagation(event: ListenCallbackEvent) {
+    this.stopped = true;
+  }
+
+  abstract invoke(next?: ListenerImpl): void;
 }
 
 class _AsyncListenersInvokeHandler<T extends string> extends _InvokeHandler<T> {
-  invoke(next?: ListenerIml | undefined): void {
-    const listener = next ?? (this.handler._first! as ListenerIml);
-    listener.scheduleEvent(this.eventName, this.data);
-    if (listener._next) this.invoke(listener._next as ListenerIml);
+  protected stopPropaogation(e: ListenCallbackEvent) {
+    super.stopPropagation(e);
+    let listener: ListenerImpl | undefined = (e.currentListener as ListenerImpl)
+      ._next as ListenerImpl;
+    while (listener) {
+      listener.cancel();
+      listener = listener._next as ListenerImpl;
+    }
+  }
+  invoke(next?: ListenerImpl | undefined): void {
+    const listener = next ?? (this.handler._first! as ListenerImpl);
+    listener.scheduleEvent(this.event.withListener(listener));
+    if (listener._next && !this.stopped)
+      this.invoke(listener._next as ListenerImpl);
   }
 }
 
 class _SyncListenersInvokeHandler<T extends string> extends _InvokeHandler<T> {
-  invoke(next?: ListenerIml) {
-    const listener = next ?? (this.handler._first! as ListenerIml);
-    listener.invoke(this.eventName, this.data);
-    if (listener._next) this.invoke(listener._next as ListenerIml);
+  invoke(next?: ListenerImpl) {
+    const listener = next ?? (this.handler._first! as ListenerImpl);
+    listener.invoke(this.event);
+    if (listener._next && !this.stopped)
+      this.invoke(listener._next as ListenerImpl);
   }
 }

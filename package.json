@@ -9,7 +9,8 @@
     "_clear_compiled": "rimraf ./dist/notifier/compiled",
     "_tsc": "tsc",
     "_make-bundle": "rollup --config",
-    "build": "run-s  _make-bundle _clear_compiled"
+    "build": "run-s  _make-bundle _clear_compiled",
+    "npm:run": "tsx"
   },
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.4",
@@ -27,6 +28,8 @@
     "rollup-plugin-dts": "^6.1.1",
     "terser-webpack-plugin": "^5.3.9",
     "ts-loader": "^9.5.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
     "types-webpack-bundler": "^1.0.2",
     "typescript": "^5.2.2",
     "webpack": "^5.89.0",
