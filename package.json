@@ -37,5 +37,9 @@
     "wepack-cli": "^0.0.1-security"
   },
   "author": "Pooria",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Coded-By-Pooria/Notifier.js"
+  },
   "license": "ISC"
 }
